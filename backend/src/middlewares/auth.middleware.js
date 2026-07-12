@@ -1,70 +1,112 @@
-import jwt from "jsonwebtoken"
-import {config} from "../config/config.js"
+import jwt from "jsonwebtoken";
+import { config } from "../config/config.js";
 import userModel from "../models/user.model.js";
 
-
 export const authenticateUser = async (req, res, next) => {
+  try {
+    const token = req.cookies?.token;
 
-    const token = req.cookies.token
-
-    if(!token){
-        return res.status(401).json({message: "Unauthorized token"})
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
     }
 
-    try{
+    const decoded = jwt.verify(token, config.JWT_SECRET);
 
-        const decoded = jwt.verify(token, config.JWT_SECRET)
-
-        const user = await userModel.findById(decoded.userId)
-
-        if(!user){
-            return res.status(401).json({message: "Unauthorized User"})
-        }
-
-        req.user = user
-        next()
-
-    }catch(error){
-
-        console.log(error);
-        return res.status(401).json({message: "Unauthorized"})
-     }
-
+    if (!decoded.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid authentication token",
+      });
     }
 
+    const user = await userModel
+      .findById(decoded.userId)
+      .select("-password");
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User account not found",
+      });
+    }
+
+    req.user = user;
+
+    return next();
+  } catch (error) {
+    console.error("Authentication error:", error.message);
+
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        success: false,
+        message: "Session expired. Please login again",
+      });
+    }
+
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired authentication token",
+    });
+  }
+};
 
 export const authenticateSeller = async (req, res, next) => {
+  try {
+    const token = req.cookies?.token;
 
-
-    const token = req.cookies.token;
-
-    if(!token){
-        return res.status(401).json({message: "Unauthorized token"})
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
     }
 
+    const decoded = jwt.verify(token, config.JWT_SECRET);
 
-    try {
-        const decoded = jwt.verify(token, config.JWT_SECRET);
-        
-        const user = await userModel.findById(decoded.userId);
-
-        // console.log(decoded);
-        
-
-        if(!user) {
-            return res.status(401).json({message: "Unauthorized user"})
-        }
-
-        if(user.role !== "seller") {
-            return res.status(403).json({message: "Forbidden"})
-        }
-
-        req.user = user;
-
-        next();
-
-    } catch (error) {
-        console.log(error);
-        return res.status(401).json({message: "Unauthorized"})
+    if (!decoded.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid authentication token",
+      });
     }
-}
+
+    const user = await userModel
+      .findById(decoded.userId)
+      .select("-password");
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User account not found",
+      });
+    }
+
+    if (user.role !== "seller") {
+      return res.status(403).json({
+        success: false,
+        message: "Seller access required",
+      });
+    }
+
+    req.user = user;
+
+    return next();
+  } catch (error) {
+    console.error("Seller authentication error:", error.message);
+
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        success: false,
+        message: "Session expired. Please login again",
+      });
+    }
+
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired authentication token",
+    });
+  }
+};

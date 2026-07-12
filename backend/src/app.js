@@ -17,26 +17,32 @@ const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const publicPath = path.join(__dirname, "../public");
+
+// backend/public folder
+const publicPath = path.resolve(__dirname, "../public");
+
+const isProduction = process.env.NODE_ENV === "production";
 
 app.set("trust proxy", 1);
+
+/* -------------------- Middlewares -------------------- */
+
+app.use(
+  cors({
+    origin: isProduction
+      ? "https://pehrawa.onrender.com"
+      : "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 
-
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "https://pehrawa.onrender.com",
-    ],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    credentials: true,
-  })
-);
+/* -------------------- Passport -------------------- */
 
 app.use(passport.initialize());
 
@@ -45,14 +51,32 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "https://pehrawa.onrender.com/api/auth/google/callback" ||
-        "http://localhost:3000/api/auth/google/callback",
+
+      callbackURL: isProduction
+        ? "https://pehrawa.onrender.com/api/auth/google/callback"
+        : "http://localhost:3000/api/auth/google/callback",
     },
-    (accessToken, refreshToken, profile, done) => {
-      return done(null, profile);
+
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        return done(null, profile);
+      } catch (error) {
+        return done(error, null);
+      }
     }
   )
 );
+
+/* -------------------- Health Check -------------------- */
+
+app.get("/api/health", (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: "Server is running",
+  });
+});
+
+/* -------------------- API Routes -------------------- */
 
 app.use("/api/auth", authRouter);
 app.use("/api/products", productsRouter);
@@ -60,7 +84,7 @@ app.use("/api/cart", cartRouter);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/reviews", reviewRoutes);
 
-app.use(express.static(publicPath));
+/* -------------------- Invalid API Route -------------------- */
 
 app.use("/api", (req, res) => {
   return res.status(404).json({
@@ -69,16 +93,22 @@ app.use("/api", (req, res) => {
   });
 });
 
-app.use((req, res, next) => {
-  if (req.method !== "GET") {
-    return next();
-  }
+/* -------------------- React Frontend -------------------- */
 
-  return res.sendFile(path.join(publicPath, "index.html"));
+app.use(express.static(publicPath));
+
+app.get("*", (req, res, next) => {
+  try {
+    return res.sendFile(path.join(publicPath, "index.html"));
+  } catch (error) {
+    return next(error);
+  }
 });
 
+/* -------------------- Error Handler -------------------- */
+
 app.use((error, req, res, next) => {
-  console.error(error);
+  console.error("Global error:", error);
 
   return res.status(error.status || 500).json({
     success: false,
