@@ -51,18 +51,11 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-
-      callbackURL: isProduction
-        ? "https://pehrawa.onrender.com/api/auth/google/callback"
-        : "http://localhost:3000/api/auth/google/callback",
+      callbackURL:
+        "https://pehrawa.onrender.com/api/auth/google/callback",
     },
-
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        return done(null, profile);
-      } catch (error) {
-        return done(error, null);
-      }
+    (accessToken, refreshToken, profile, done) => {
+      return done(null, profile);
     }
   )
 );
