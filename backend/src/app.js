@@ -97,12 +97,12 @@ app.use("/api", (req, res) => {
 
 app.use(express.static(publicPath));
 
-app.get("*", (req, res, next) => {
-  try {
-    return res.sendFile(path.join(publicPath, "index.html"));
-  } catch (error) {
-    return next(error);
+app.use((req, res, next) => {
+  if (req.method !== "GET") {
+    return next();
   }
+
+  return res.sendFile(path.join(publicPath, "index.html"));
 });
 
 /* -------------------- Error Handler -------------------- */
