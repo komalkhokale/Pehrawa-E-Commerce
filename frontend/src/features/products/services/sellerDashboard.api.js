@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const sellerDashboardApi = axios.create({
-  baseURL: "/api/products",
+  baseURL: "https://pehrawa.onrender.com/api/products",
   withCredentials: true,
 });
 

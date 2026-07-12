@@ -2,18 +2,12 @@ import axios from "axios"
 
 
 const productApiInstance = axios.create({
-    baseURL: "/api/products",
+    baseURL: "https://pehrawa.onrender.com/api/products",
     withCredentials: true,
 })
 
 
-// export async function createProduct(formData) {
 
-//     const response = await productApiInstance.post("/", formData)
-
-//     return response.data
-    
-// }
 
 export async function createProduct(formData) {
   const response = await productApiInstance.post("/", formData, {
@@ -51,51 +45,6 @@ export async function getProductById(productId) {
     return response.data
     
 }   
-
-// export async function addProductVariant(productId, newProductVariant) {
-
-//         console.log("Product ID:", productId);
-//     console.log("Variant:", newProductVariant);
-    
-//     const formData = new FormData()
-
-//     newProductVariant.images.forEach((image) => {
-//         formData.append(`images`, image.file)
-//     })
-
-//     formData.append("stock", newProductVariant.stock)
-//     formData.append("priceAmount", newProductVariant.price)
-//     formData.append("attributes", JSON.stringify(newProductVariant.attributes))
-
-//     const response = await productApiInstance.post(`/${productId}/variants`, formData)
-
-//     return response.data
-
-// }
-
-// export async function addProductVariant(productId, newProductVariant) {
-//     try {
-//         const formData = new FormData();
-
-//         newProductVariant.images.forEach((image) => {
-//             formData.append("images", image.file);
-//         });
-
-//         formData.append("stock", newProductVariant.stock);
-//         formData.append("priceAmount", newProductVariant.price);
-//         formData.append("attributes", JSON.stringify(newProductVariant.attributes));
-
-//         const response = await productApiInstance.post(
-//             `/${productId}/variants`,
-//             formData
-//         );
-
-//         return response.data;
-//     } catch (error) {
-//         console.log("Backend Error:", error.response.data);
-//         throw error;
-//     }
-// }
 
 export async function addProductVariant(productId, newProductVariant) {
 

@@ -2,7 +2,7 @@ import axios from "axios"
 
 
 const cartApiInstance = axios.create({
-    baseURL: "/api/cart",
+    baseURL: "https://pehrawa.onrender.com/api/cart",
     withCredentials: true
 })
 

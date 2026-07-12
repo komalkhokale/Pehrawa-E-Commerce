@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const reviewApiInstance = axios.create({
-  baseURL: "/api/reviews",
+  baseURL: "https://pehrawa.onrender.com/api/reviews",
   withCredentials: true,
 });
 
