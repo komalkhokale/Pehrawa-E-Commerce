@@ -30,8 +30,8 @@ async function sendTokenResponse(user, res, message) {
   res.cookie("token", token, cookieOptions);
 
   return res.status(200).json({
-    message,
     success: true,
+    message,
     user: {
       id: user._id,
       email: user.email,
@@ -52,13 +52,31 @@ export const registerUser = async (req, res) => {
       isSeller,
     } = req.body;
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = email?.trim().toLowerCase();
     const normalizedContact = contact?.trim();
+    const normalizedFullname = fullname?.trim();
 
-    const searchConditions = [{ email: normalizedEmail }];
+    if (
+      !normalizedEmail ||
+      !password ||
+      !normalizedFullname
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Full name, email and password are required",
+      });
+    }
+
+    const searchConditions = [
+      {
+        email: normalizedEmail,
+      },
+    ];
 
     if (normalizedContact) {
-      searchConditions.push({ contact: normalizedContact });
+      searchConditions.push({
+        contact: normalizedContact,
+      });
     }
 
     const existingUser = await userModel.findOne({
@@ -66,12 +84,14 @@ export const registerUser = async (req, res) => {
     });
 
     if (existingUser) {
+      const message =
+        existingUser.email === normalizedEmail
+          ? "Email is already registered"
+          : "Contact number is already registered";
+
       return res.status(400).json({
         success: false,
-        message:
-          existingUser.email === normalizedEmail
-            ? "Email is already registered"
-            : "Contact number is already registered",
+        message,
       });
     }
 
@@ -79,7 +99,7 @@ export const registerUser = async (req, res) => {
       email: normalizedEmail,
       contact: normalizedContact,
       password,
-      fullname: fullname.trim(),
+      fullname: normalizedFullname,
       role: isSeller ? "seller" : "buyer",
     });
 
@@ -92,17 +112,22 @@ export const registerUser = async (req, res) => {
     console.error("Register error:", error);
 
     if (error.code === 11000) {
-      const duplicateField = Object.keys(error.keyPattern || {})[0];
+      const duplicateField = Object.keys(
+        error.keyPattern || {}
+      )[0];
 
       return res.status(400).json({
         success: false,
-        message: `${duplicateField || "User"} already exists`,
+        message: `${
+          duplicateField || "User"
+        } already exists`,
       });
     }
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Internal server error",
+      message:
+        error.message || "Internal server error",
     });
   }
 };
@@ -111,7 +136,16 @@ export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = email
+      ?.trim()
+      .toLowerCase();
+
+    if (!normalizedEmail || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
 
     const user = await userModel.findOne({
       email: normalizedEmail,
@@ -146,16 +180,25 @@ export const loginUser = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Internal server error",
+      message:
+        error.message || "Internal server error",
     });
   }
 };
 
 export const googleCallback = async (req, res) => {
   try {
-    const { id, displayName, emails, photos } = req.user;
+    const {
+      id,
+      displayName,
+      emails,
+      photos,
+    } = req.user;
 
-    const email = emails?.[0]?.value?.trim().toLowerCase();
+    const email = emails?.[0]?.value
+      ?.trim()
+      .toLowerCase();
+
     const profilePicture = photos?.[0]?.value;
 
     if (!email) {
@@ -164,7 +207,9 @@ export const googleCallback = async (req, res) => {
       );
     }
 
-    let user = await userModel.findOne({ email });
+    let user = await userModel.findOne({
+      email,
+    });
 
     if (!user) {
       user = await userModel.create({
@@ -174,22 +219,32 @@ export const googleCallback = async (req, res) => {
         profilePicture,
         role: "buyer",
       });
-    } else if (!user.googleId) {
-      user.googleId = id;
+    } else {
+      let hasChanges = false;
 
-      if (!user.fullname) {
+      if (!user.googleId) {
+        user.googleId = id;
+        hasChanges = true;
+      }
+
+      if (!user.fullname && displayName) {
         user.fullname = displayName;
+        hasChanges = true;
       }
 
-      if (!user.profilePicture && profilePicture) {
+      if (
+        !user.profilePicture &&
+        profilePicture
+      ) {
         user.profilePicture = profilePicture;
+        hasChanges = true;
       }
 
-      await user.save();
+      if (hasChanges) {
+        await user.save();
+      }
     }
 
-    // IMPORTANT: Middleware decoded.userId read karta hai,
-    // isliye yahan bhi userId hi hona chahiye.
     const token = jwt.sign(
       {
         userId: user._id,
@@ -204,7 +259,10 @@ export const googleCallback = async (req, res) => {
 
     return res.redirect(frontendURL);
   } catch (error) {
-    console.error("Google callback error:", error);
+    console.error(
+      "Google callback error:",
+      error
+    );
 
     return res.redirect(
       `${frontendURL}/login?error=google_login_failed`
@@ -217,8 +275,8 @@ export const getMe = async (req, res) => {
     const user = req.user;
 
     return res.status(200).json({
-      message: "User fetched successfully",
       success: true,
+      message: "User fetched successfully",
       user: {
         id: user._id,
         email: user.email,
@@ -237,7 +295,10 @@ export const getMe = async (req, res) => {
   }
 };
 
-export const logoutUser = async (req, res) => {
+export const logoutUser = async (
+  req,
+  res
+) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
