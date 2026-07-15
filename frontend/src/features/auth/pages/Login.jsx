@@ -82,7 +82,7 @@ const Login = () => {
                 letterSpacing: "0.35em",
               }}
             >
-              Snitch.
+              Pehrawa.
             </span>
             {/* Editorial Headline */}
             <div>
@@ -120,7 +120,7 @@ const Login = () => {
                   color: "#C9A96E",
                 }}
               >
-                Snitch.
+                Pehrawa.
               </span>
             </div>
 
@@ -130,7 +130,7 @@ const Login = () => {
                 className="text-[10px] uppercase tracking-[0.22em] mb-4 font-medium"
                 style={{ color: "#C9A96E" }}
               >
-                Sign in to Snitch
+                Sign in to Pehrawa
               </p>
               <h1
                 className="text-[2.6rem] xl:text-5xl font-light leading-[1.1]"
